@@ -25,13 +25,34 @@ impl AxialCoords
         CubeCoords::distance(CubeCoords::from(a), CubeCoords::from(b))
     }
 
-    pub fn from_world(x: f32, y: f32) -> Self {
-        todo!()
+    pub fn from_world(x: f32, y: f32, orientation: HexOrientation) -> Self {
+        let sqrt_3 = 3.0f32.sqrt();
+        match orientation
+        {
+            HexOrientation::PointyTop => {
+                let q = sqrt_3 / 3.0 * x - 1.0 / 3.0 * y;
+                let r = 2.0 / 3.0 * y;
+                let s = -q - r;
+                let cube = CubeCoords::round(q, r, s);
+                AxialCoords::from(cube)
+            },
+            HexOrientation::FlatTop => todo!(),
+        }
     }
 
     pub fn to_world(&self, orientation: HexOrientation) -> (f32, f32)
     {
-        todo!()
+        match orientation
+        {
+            HexOrientation::FlatTop => {
+                todo!()
+            },
+            HexOrientation::PointyTop => {
+                let x = self.q as f32 * POINTY_TOP_WIDTH + self.r as f32 * POINTY_TOP_WIDTH / 2.0;
+                let y = self.r as f32 * POINTY_TOP_VERTICAL_SPACING;
+                (x, y)
+            },
+        }
     }
 
     pub fn corners(&self, orientation: HexOrientation) -> [(f32, f32);6]

@@ -1,4 +1,4 @@
-use svg::{Document, node::element::{Path, path::Data}};
+use svg::{Document, node::element::{Path, path::Data, Text, Circle}};
 use hexmap::constants::*;
 
 
@@ -61,8 +61,7 @@ fn draw_flat_top_hex()
         .move_to((image_width as f32 / 2.0, FLAT_TOP_HEIGHT * SIZE as f32 / 4.0))
         .line_to((-image_width as f32 / 2.0, FLAT_TOP_HEIGHT * SIZE as f32 / 4.0))
         .move_to((image_width as f32 / 2.0, FLAT_TOP_HEIGHT * SIZE as f32 / 2.0))
-        .line_to((-image_width as f32 / 2.0, FLAT_TOP_HEIGHT * SIZE as f32 / 2.0))
-        ;
+        .line_to((-image_width as f32 / 2.0, FLAT_TOP_HEIGHT * SIZE as f32 / 2.0));
 
     let grid_path = Path::new()
         .set("d", grid_data)

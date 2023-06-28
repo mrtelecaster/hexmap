@@ -45,4 +45,6 @@ pub mod constants
         (-POINTY_TOP_WIDTH / 2.0, -POINTY_TOP_HEIGHT / 4.0),
         (-POINTY_TOP_WIDTH / 2.0, POINTY_TOP_HEIGHT / 4.0),
     ];
+
+    pub const POINTY_TOP_VERTICAL_SPACING: f32 = POINTY_TOP_HEIGHT / 4.0 * 3.0;
 }

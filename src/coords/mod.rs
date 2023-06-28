@@ -2,12 +2,8 @@ mod axial_coords; pub use axial_coords::*;
 mod cube_coords; pub use cube_coords::*;
 
 
-
-
-
-
-
-/// Shortcut for [`AxialCoords::new`](crate::AxialCoords::new). Creates a new set of [axial coordinates](crate::AxialCoords) with the provided values.
+/// Shortcut for [`AxialCoords::new`](crate::AxialCoords::new). Creates a new set of
+/// [axial coordinates](crate::AxialCoords) with the provided values.
 /// 
 /// ```
 /// use hexmap::{AxialCoords, axial};
@@ -18,7 +14,8 @@ macro_rules! axial {
     ($q:literal, $r:literal) => { AxialCoords::new($q, $r) }
 }
 
-/// Creates a new set of [`CubeCoords`](crate::CubeCoords) with the provided values. Acts as a shortcut for [`CubeCoords::new`](crate::CubeCoords::new)
+/// Creates a new set of [`CubeCoords`](crate::CubeCoords) with the provided values. Acts as a
+/// shortcut for [`CubeCoords::new`](crate::CubeCoords::new)
 /// 
 /// ```
 /// use hexmap::{CubeCoords, cube};
