@@ -1,5 +1,5 @@
 use std::ops::{Add, Sub};
-use crate::{CubeCoords, HexOrientation, constants::*};
+use crate::{CubeCoords, HexOrientation, constants::*, HexCoords};
 
 
 
@@ -69,6 +69,33 @@ impl AxialCoords
     }
 }
 
+impl HexCoords for AxialCoords
+{
+    fn line(a: Self, b: Self) -> Vec<Self> {
+        let cube_coord_line: Vec<CubeCoords> = CubeCoords::line(a.into(), b.into());
+        let axial_coord_line: Vec<AxialCoords> = cube_coord_line.iter()
+            .map(|val| {AxialCoords::from(val)})
+            .collect();
+        axial_coord_line
+    }
+
+    fn ring(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
+        let cube_coord_ring: Vec<CubeCoords> = CubeCoords::ring(center.into(), radius);
+        let axial_coord_ring: Vec<AxialCoords> = cube_coord_ring.iter()
+            .map(|val|{AxialCoords::from(val)})
+            .collect();
+        axial_coord_ring
+    }
+
+    fn area(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
+        let cube_coord_area: Vec<CubeCoords> = CubeCoords::area(center.into(), radius);
+        let axial_coord_area: Vec<AxialCoords> = cube_coord_area.iter()
+            .map(|val|{AxialCoords::from(val)})
+            .collect();
+        axial_coord_area
+    }
+}
+
 impl Add<Self> for AxialCoords
 {
     type Output = Self;
@@ -81,6 +108,13 @@ impl Add<Self> for AxialCoords
 impl From<CubeCoords> for AxialCoords
 {
     fn from(value: CubeCoords) -> Self {
+        Self{ q: value.q, r: value.r }
+    }
+}
+
+impl From<&CubeCoords> for AxialCoords
+{
+    fn from(value: &CubeCoords) -> Self {
         Self{ q: value.q, r: value.r }
     }
 }

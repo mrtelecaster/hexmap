@@ -1,4 +1,4 @@
-use svg::{Document, node::element::{Path, path::Data, Text, Circle}};
+use svg::{Document, node::element::{Path, path::Data}};
 use hexmap::constants::*;
 
 

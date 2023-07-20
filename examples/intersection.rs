@@ -1,4 +1,9 @@
-use hexmap::{AxialCoords, axial, HexOrientation, constants::POINTY_TOP_CORNERS};
+//! Demonstrates/tests conversion of world space coordinates to hexagon coordinates
+//! 
+//! This is done by "shooting" a large number of random points onto an image plane and coloring them
+//! based on which hexagon they land in. The results are depicted in `images/bullseye.svg`
+
+use hexmap::{AxialCoords, axial, HexOrientation, constants::*};
 use rand::thread_rng;
 use rand_distr::{Distribution, Normal};
 use svg::{node::element::{Circle, path::Data, Path}, Document};
@@ -6,12 +11,17 @@ use svg::{node::element::{Circle, path::Data, Path}, Document};
 const SCALE: f32 = 400.0;
 const SHOTS_WIDTH: f32 = 2.0;
 const SHOTS: usize = 20000;
-const ORIENTATION: HexOrientation = HexOrientation::PointyTop;
+const ORIENTATION: HexOrientation = HexOrientation::FlatTop;
 
 
 fn main()
 {
-    let hex_corners: Vec<(f32, f32)> = POINTY_TOP_CORNERS.iter().map(|(x, y)| { (x * SCALE, y * SCALE) }).collect();
+    let base_corners = match ORIENTATION
+    {
+        HexOrientation::PointyTop => POINTY_TOP_CORNERS,
+        HexOrientation::FlatTop => FLAT_TOP_CORNERS,
+    };
+    let hex_corners: Vec<(f32, f32)> = base_corners.iter().map(|(x, y)| { (x * SCALE, y * SCALE) }).collect();
     let mut rng = thread_rng();
     let hex_data = Data::new()
         .move_to(hex_corners[0])
@@ -71,5 +81,5 @@ fn main()
             .set("stroke", "none");
         document = document.add(circle);
     }
-    svg::save("examples/images/bullseye.svg", &document);
+    svg::save("examples/images/bullseye.svg", &document).unwrap();
 }

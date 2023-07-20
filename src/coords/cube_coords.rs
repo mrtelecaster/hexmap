@@ -1,5 +1,7 @@
 use std::{ops::{Add, Mul, Neg, Sub}, fmt::Display};
 use lerp::Lerp;
+use crate::HexCoords;
+
 use super::AxialCoords;
 
 
@@ -67,23 +69,6 @@ impl CubeCoords
     // Set generators ------------------------------------------------------- //
     // Functions that generate sets of coordinates representing common shapes
 
-    /// Generates a contiguous line of [`CubeCoord`s](CubeCoords) from coordinate `a` to
-    /// coordinate `b`.
-    /// 
-    /// Resulting vector ncludes `a` as the first element in the array and `b` as the last element.
-    /// All elements in between should be adjacent and in order from `a` to `b`.
-    pub fn line(a: Self, b: Self) -> Vec<Self>
-    {
-        let tiles = Self::distance(a, b)+1;
-        let mut output = Vec::default();
-        for i in 0..tiles
-        {
-            let t = i as f32 / (tiles-1) as f32;
-            output.push(a.lerp(b, t));
-        }
-        output
-    }
-
     /// Generates a contiguous line of coordinates from `(0, 0, 0)` to the argument `end`.
     /// 
     /// The resulting vector includes the `(0, 0, 0)` coord as the first element in
@@ -122,12 +107,6 @@ impl CubeCoords
         output
     }
 
-    /// Generates a ring of adjacent coordinates centered around a specific other coordinate
-    pub fn ring(center: Self, radius: isize) -> Vec<Self>
-    {
-        Self::centered_ring(radius).iter().map(|val| val + center ).collect()
-    }
-
     /// Generates a hexagon shaped filled area of coordinates centered around `(0, 0, 0)`
     pub fn centered_area(radius: isize) -> Vec<Self>
     {
@@ -135,17 +114,6 @@ impl CubeCoords
         for i in 0..radius+1
         {
             output.append(&mut Self::centered_ring(i));
-        }
-        output
-    }
-
-    /// Generates a hexagon shaped filled area of coordinates centered around the given point
-    pub fn area(center: Self, radius: isize) -> Vec<Self>
-    {
-        let mut output = Vec::new();
-        for i in 0..radius+1
-        {
-            output.append(&mut Self::ring(center, i));
         }
         output
     }
@@ -162,6 +130,50 @@ impl CubeCoords
     pub fn is_valid(&self) -> bool
     {
         self.q + self.r + self.s == 0
+    }
+}
+
+impl HexCoords for CubeCoords
+{
+    fn line(a: Self, b: Self) -> Vec<Self> {
+        let tiles = Self::distance(a, b)+1;
+        let mut output = Vec::default();
+        for i in 0..tiles
+        {
+            let t = i as f32 / (tiles-1) as f32;
+            output.push(a.lerp(b, t));
+        }
+        output
+    }
+
+    fn ring(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
+        if radius == 0 {
+            return vec![center];
+        }
+        let mut output = Vec::new();
+        let corner_q = center + Self::Q * radius;
+        let corner_r = center + Self::R * radius;
+        let corner_s = center + Self::S * radius;
+        for i in 0..radius
+        {
+            output.push(corner_q + Self::R * i);
+            output.push(-corner_q - Self::R * i);
+            output.push(corner_r + Self::S * i);
+            output.push(-corner_r - Self::S * i);
+            output.push(corner_s + Self::Q * i);
+            output.push(-corner_s - Self::Q * i);
+        }
+        output
+    }
+
+    fn area(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
+        let mut output = Vec::new();
+        for i in 0..radius
+        {
+            let mut ring = CubeCoords::ring(center, i);
+            output.append(&mut ring);
+        }
+        output
     }
 }
 
@@ -247,6 +259,15 @@ impl Mul<isize> for CubeCoords
 
     fn mul(self, rhs: isize) -> Self::Output {
         Self::new(self.q * rhs, self.r * rhs, self.s * rhs)
+    }
+}
+
+impl Mul<usize> for CubeCoords
+{
+    type Output = CubeCoords;
+
+    fn mul(self, rhs: usize) -> Self::Output {
+        self * rhs as isize
     }
 }
 
