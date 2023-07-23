@@ -1,6 +1,6 @@
 use std::{ops::{Add, Mul, Neg, Sub}, fmt::Display};
 use lerp::Lerp;
-use crate::HexCoords;
+use crate::{HexCoords, cube};
 
 use super::AxialCoords;
 
@@ -8,6 +8,8 @@ use super::AxialCoords;
 /// Cube coordinates
 /// 
 /// Good for math, but can be annoying to work with from a human perspective as well as having an "unnecessary" third coordinate compared to [`AxialCoords`]
+/// 
+/// <https://www.redblobgames.com/grids/hexagons/#coordinates-cube>
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CubeCoords
 {
@@ -16,14 +18,23 @@ pub struct CubeCoords
     pub s: isize,
 }
 
+/// Creates a new set of [`CubeCoords`](crate::CubeCoords) with the provided values. Acts as a
+/// shortcut for [`CubeCoords::new`](crate::CubeCoords::new)
+/// 
+/// ```
+/// use hexmap::{CubeCoords, cube};
+/// assert_eq!(CubeCoords::new(1, 2, -3), cube!(1, 2, -3));
+/// ```
+#[macro_export]
+macro_rules! cube {
+    ($q:literal, $r:literal, $s:literal) => { CubeCoords::new($q, $r, $s) }
+}
+
 impl CubeCoords
 {
     // Constants ------------------------------------------------------------ //
 
     pub const ZERO: Self = Self{ q: 0, r: 0, s: 0 };
-    pub const Q: Self = Self{ q: 0, r: -1, s: 1 };
-    pub const R: Self = Self{ q: 1, r: 0, s: -1 };
-    pub const S: Self = Self{ q: -1, r: 1, s: 0 };
 
     // Constructors --------------------------------------------------------- //
 
@@ -79,45 +90,6 @@ impl CubeCoords
         Self::line(Self::new(0, 0, 0), end)
     }
 
-    /// Generates a ring of coordinates centered at `(0, 0, 0)`.
-    /// 
-    /// The `radius` argument represents how many rings of hexagonal coordinates out from the center point the resulting points represent.
-    /// For example, a radius of `0` will simply return the center point `(0, 0, 0)`, a radius of `1` will return the 6 coordinates that
-    /// surround the center point, a radius of `2` will return the coordinates that surround those, and so on.
-    pub fn centered_ring(radius: isize) -> Vec<Self>
-    {
-        if radius < 0 {
-            panic!("Radius must be at least 0");
-        } else if radius == 0 {
-            return vec![Self::ZERO];
-        }
-        let mut output = Vec::new();
-        let corner_q = Self::Q * radius;
-        let corner_r = Self::R * radius;
-        let corner_s = Self::S * radius;
-        for i in 0..radius
-        {
-            output.push(corner_q + Self::R * i);
-            output.push(-corner_q - Self::R * i);
-            output.push(corner_r + Self::S * i);
-            output.push(-corner_r - Self::S * i);
-            output.push(corner_s + Self::Q * i);
-            output.push(-corner_s - Self::Q * i);
-        }
-        output
-    }
-
-    /// Generates a hexagon shaped filled area of coordinates centered around `(0, 0, 0)`
-    pub fn centered_area(radius: isize) -> Vec<Self>
-    {
-        let mut output = Vec::new();
-        for i in 0..radius+1
-        {
-            output.append(&mut Self::centered_ring(i));
-        }
-        output
-    }
-
     // Static methods ------------------------------------------------------- //
 
     pub fn distance(a: Self, b: Self) -> isize {
@@ -151,17 +123,17 @@ impl HexCoords for CubeCoords
             return vec![center];
         }
         let mut output = Vec::new();
-        let corner_q = center + Self::Q * radius;
-        let corner_r = center + Self::R * radius;
-        let corner_s = center + Self::S * radius;
+        let corner_q = center + cube!(0, -1, 1) * radius;
+        let corner_r = center + cube!(1, 0, -1) * radius;
+        let corner_s = center + cube!(-1, 1, 0) * radius;
         for i in 0..radius
         {
-            output.push(corner_q + Self::R * i);
-            output.push(-corner_q - Self::R * i);
-            output.push(corner_r + Self::S * i);
-            output.push(-corner_r - Self::S * i);
-            output.push(corner_s + Self::Q * i);
-            output.push(-corner_s - Self::Q * i);
+            output.push(corner_q + cube!(1, 0, -1) * i);
+            output.push(-corner_q - cube!(1, 0, -1) * i);
+            output.push(corner_r + cube!(-1, 1, 0) * i);
+            output.push(-corner_r - cube!(-1, 1, 0) * i);
+            output.push(corner_s + cube!(0, -1, 1) * i);
+            output.push(-corner_s - cube!(0, -1, 1) * i);
         }
         output
     }
@@ -174,6 +146,17 @@ impl HexCoords for CubeCoords
             output.append(&mut ring);
         }
         output
+    }
+
+    fn adjacent(center: Self) -> Vec<Self> {
+        vec![
+            center + cube!(0, -1, 1),
+            center + cube!(1, -1, 0),
+            center + cube!(1, 0, -1),
+            center + cube!(0, 1, -1),
+            center + cube!(-1, 1, 0),
+            center + cube!(-1, 0, 1),
+        ]
     }
 }
 
@@ -299,27 +282,33 @@ mod tests
     #[ignore]
     fn area()
     {
-        todo!()
+        let center = cube!(1, 0, -1);
+        let area = CubeCoords::area(center, 0);
+        assert_eq!(1, area.len());
+        assert!(area.contains(&center));
+
+        let area = CubeCoords::area(center, 1);
+        assert_eq!(7, area.len());
+        assert!(area.contains(&center));
+        assert!(area.contains(&cube!(2, -1, -1)));
+
+        let area = CubeCoords::area(center, 2);
+        assert_eq!(19, area.len());
+        assert!(area.contains(&center));
+        assert!(area.contains(&cube!(2, -1, -1)));
+        assert!(area.contains(&cube!(-1, 0, 1)));
     }
 
     #[test]
     #[ignore]
-    fn centered_area()
+    fn ring()
     {
-        todo!()
-    }
-
-    #[test]
-    fn centered_ring()
-    {
-        let radius = 0;
-        let ring = CubeCoords::centered_ring(radius);
+        let ring = CubeCoords::ring(CubeCoords::ZERO, 0);
         assert_eq!(1, ring.len());
-        assert!(ring.contains(&cube!(0, 0, 0)));
+        assert!(ring.contains(&CubeCoords::ZERO));
 
-        let radius = 1;
-        let ring = CubeCoords::centered_ring(radius);
-        // assert_eq!(6, ring.len());
+        let ring = CubeCoords::ring(CubeCoords::ZERO, 1);
+        assert_eq!(6, ring.len());
         assert!(ring.contains(&cube!(0, -1, 1)));
         assert!(ring.contains(&cube!(1, -1, 0)));
         assert!(ring.contains(&cube!(1, 0, -1)));
@@ -327,24 +316,39 @@ mod tests
         assert!(ring.contains(&cube!(-1, 1, 0)));
         assert!(ring.contains(&cube!(-1, 0, 1)));
 
-        let radius = 2;
-        let ring = CubeCoords::centered_ring(radius);
-        // assert_eq!(12, ring.len());
+        let ring = CubeCoords::ring(CubeCoords::ZERO, 2);
+        assert_eq!(12, ring.len());
         assert!(ring.contains(&cube!(0, -2, 2)));
-        assert!(ring.contains(&cube!(1, -2, 1)));
         assert!(ring.contains(&cube!(2, -2, 0)));
-        assert!(ring.contains(&cube!(2, -1, -1)));
         assert!(ring.contains(&cube!(2, 0, -2)));
-        assert!(ring.contains(&cube!(1, 1, -2)));
         assert!(ring.contains(&cube!(0, 2, -2)));
-        assert!(ring.contains(&cube!(-1, 2, -1)));
         assert!(ring.contains(&cube!(-2, 2, 0)));
-        assert!(ring.contains(&cube!(-2, 1, 1)));
         assert!(ring.contains(&cube!(-2, 0, 2)));
+        assert!(ring.contains(&cube!(1, -2, 1)));
+        assert!(ring.contains(&cube!(2, -1, -1)));
+        assert!(ring.contains(&cube!(1, 1, -2)));
+        assert!(ring.contains(&cube!(-1, 2, -1)));
+        assert!(ring.contains(&cube!(-2, 1, 1)));
         assert!(ring.contains(&cube!(-1, -1, 2)));
+
+        let center = cube!(1, -1, 0);
+        let ring = CubeCoords::ring(center, 0);
+        assert_eq!(1, ring.len());
+        assert!(ring.contains(&center));
+
+        let ring = CubeCoords::ring(center, 1);
+        assert_eq!(6, ring.len());
+        assert!(!ring.contains(&center));
+        assert!(ring.contains(&cube!(0, 0, 0)));
+        assert!(ring.contains(&cube!(1, -2, 1)));
+        assert!(ring.contains(&cube!(2, -1, -1)));
+        assert!(ring.contains(&cube!(1, 0, -1)), "Ring: {:?}", ring);
+        assert!(ring.contains(&cube!(0, -1, 1)));
+        assert!(ring.contains(&cube!(2, -2, 0)));
     }
 
     #[test]
+    #[ignore]
     fn distance()
     {
         assert_eq!(0, CubeCoords::distance(cube!(0, 0, 0), cube!(0, 0, 0)));
@@ -453,10 +457,17 @@ mod tests
         assert_eq!(cube!(2, -1, -1), line[3]);
     }
 
-    #[test]
-    #[ignore]
-    fn ring()
+    mod ops
     {
-        todo!()
+        use super::*;
+
+        #[test]
+        #[ignore]
+        fn add()
+        {
+            assert_eq!(cube!(0, 0, 0), cube!(0, 0, 0) + cube!(0, 0, 0));
+            assert_eq!(cube!(3, 0, -3), cube!(1, 1, -2) + cube!(2, -1, -1));
+            assert_eq!(cube!(16, -3, -9), cube!(1, 2, -3) + cube!(11, -5, -6));
+        }
     }
 }

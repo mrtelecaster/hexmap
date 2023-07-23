@@ -17,7 +17,55 @@ pub enum HexOrientation
     FlatTop,
 }
 
+impl HexOrientation
+{
+    /// Width of a tile in this orientation along the X-axis
+    pub fn tile_width(&self) -> f32
+    {
+        match self {
+            Self::PointyTop => constants::POINTY_TOP_WIDTH,
+            Self::FlatTop => constants::FLAT_TOP_WIDTH,
+        }
+    }
 
+    /// Height of a tile along this orientation along the Y-axis
+    pub fn tile_height(&self) -> f32
+    {
+        match self {
+            Self::PointyTop => constants::POINTY_TOP_HEIGHT,
+            Self::FlatTop => constants::FLAT_TOP_HEIGHT,
+        }
+    }
+
+    pub fn tile_spacing_x(&self) -> f32
+    {
+        match self {
+            Self::PointyTop => constants::POINTY_TOP_X_SPACING,
+            Self::FlatTop => constants::FLAT_TOP_X_SPACING,
+        }
+    }
+
+    pub fn tile_spacing_y(&self) -> f32
+    {
+        match self {
+            Self::PointyTop => constants::POINTY_TOP_Y_SPACING,
+            Self::FlatTop => constants::FLAT_TOP_Y_SPACING,
+        }
+    }
+
+    pub fn tile_corners(&self) -> [(f32, f32);6]
+    {
+        match self {
+            Self::PointyTop => constants::POINTY_TOP_CORNERS,
+            Self::FlatTop => constants::FLAT_TOP_CORNERS,
+        }
+    }
+}
+
+
+/// Constants used by the crate. Mostly used for hexagon sizes and corner positions.
+/// 
+/// <https://www.redblobgames.com/grids/hexagons/#spacing>
 pub mod constants
 {
     /// Square root of 3
@@ -28,6 +76,10 @@ pub mod constants
 
     /// Distance between left and right points
     pub const FLAT_TOP_WIDTH: f32 = 2.0;
+
+    pub const FLAT_TOP_X_SPACING: f32 = FLAT_TOP_WIDTH * 3.0 / 4.0;
+
+    pub const FLAT_TOP_Y_SPACING: f32 = FLAT_TOP_HEIGHT;
 
     /// Corner positions of a flat topped hexagon
     pub const FLAT_TOP_CORNERS: [(f32, f32);6] = [
@@ -55,5 +107,7 @@ pub mod constants
         (-POINTY_TOP_WIDTH / 2.0, POINTY_TOP_HEIGHT / 4.0),
     ];
 
-    pub const POINTY_TOP_VERTICAL_SPACING: f32 = POINTY_TOP_HEIGHT / 4.0 * 3.0;
+    pub const POINTY_TOP_X_SPACING: f32 = POINTY_TOP_WIDTH;
+
+    pub const POINTY_TOP_Y_SPACING: f32 = POINTY_TOP_HEIGHT / 4.0 * 3.0;
 }
