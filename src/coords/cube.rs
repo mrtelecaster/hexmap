@@ -119,28 +119,14 @@ impl HexCoords for CubeCoords
     }
 
     fn ring(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
-        if radius == 0 {
-            return vec![center];
-        }
-        let mut output = Vec::new();
-        let corner_q = center + cube!(0, -1, 1) * radius;
-        let corner_r = center + cube!(1, 0, -1) * radius;
-        let corner_s = center + cube!(-1, 1, 0) * radius;
-        for i in 0..radius
-        {
-            output.push(corner_q + cube!(1, 0, -1) * i);
-            output.push(-corner_q - cube!(1, 0, -1) * i);
-            output.push(corner_r + cube!(-1, 1, 0) * i);
-            output.push(-corner_r - cube!(-1, 1, 0) * i);
-            output.push(corner_s + cube!(0, -1, 1) * i);
-            output.push(-corner_s - cube!(0, -1, 1) * i);
-        }
-        output
+        let axial_ring = AxialCoords::ring(center.into(), radius);
+        let cube_ring = axial_ring.iter().map(|axial|{CubeCoords::from(axial)}).collect();
+        cube_ring
     }
 
     fn area(center: Self, radius: usize) -> Vec<Self> where Self: Sized {
         let mut output = Vec::new();
-        for i in 0..radius
+        for i in 0..radius+1
         {
             let mut ring = CubeCoords::ring(center, i);
             output.append(&mut ring);
@@ -212,7 +198,17 @@ impl From<[f32;3]> for CubeCoords
 
 impl From<AxialCoords> for CubeCoords
 {
+    /// Converts to [`CubeCoords`] from [`AxialCoords`]
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
     fn from(value: AxialCoords) -> Self {
+        Self{ q: value.q, r: value.r, s: -value.q - value.r }
+    }
+}
+
+impl From<&AxialCoords> for CubeCoords
+{
+    fn from(value: &AxialCoords) -> Self {
         Self{ q: value.q, r: value.r, s: -value.q - value.r }
     }
 }
@@ -279,7 +275,6 @@ mod tests
     use crate::{axial, cube};
 
     #[test]
-    #[ignore]
     fn area()
     {
         let center = cube!(1, 0, -1);
@@ -300,7 +295,6 @@ mod tests
     }
 
     #[test]
-    #[ignore]
     fn ring()
     {
         let ring = CubeCoords::ring(CubeCoords::ZERO, 0);
@@ -348,7 +342,6 @@ mod tests
     }
 
     #[test]
-    #[ignore]
     fn distance()
     {
         assert_eq!(0, CubeCoords::distance(cube!(0, 0, 0), cube!(0, 0, 0)));

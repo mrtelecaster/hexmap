@@ -76,13 +76,6 @@ mod tests
         assert_eq!(None, cube_map.get(cube!(0, 0, 0)))
     }
 
-    #[test]
-    fn add_adjacent_nodes()
-    {
-        let mut map: HexMap<AxialCoords, ()> = HexMap::new();
-        map.insert_area(axial!(0, 0), 1, ());
-    }
-
     mod pathfinding
     {
         use super::*;

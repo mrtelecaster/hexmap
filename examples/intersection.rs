@@ -3,7 +3,7 @@
 //! This is done by "shooting" a large number of random points onto an image plane and coloring them
 //! based on which hexagon they land in. The results are depicted in `images/bullseye.svg`
 
-use hexmap::{AxialCoords, axial, HexOrientation, constants::*};
+use hexmap::{AxialCoords, axial, Orientation, constants::*};
 use rand::thread_rng;
 use rand_distr::{Distribution, Normal};
 use svg::{node::element::{Circle, path::Data, Path}, Document};
@@ -11,15 +11,15 @@ use svg::{node::element::{Circle, path::Data, Path}, Document};
 const SCALE: f32 = 400.0;
 const SHOTS_WIDTH: f32 = 2.0;
 const SHOTS: usize = 20000;
-const ORIENTATION: HexOrientation = HexOrientation::FlatTop;
+const ORIENTATION: Orientation = Orientation::FlatTop;
 
 
 fn main()
 {
     let base_corners = match ORIENTATION
     {
-        HexOrientation::PointyTop => POINTY_TOP_CORNERS,
-        HexOrientation::FlatTop => FLAT_TOP_CORNERS,
+        Orientation::PointyTop => POINTY_TOP_CORNERS,
+        Orientation::FlatTop => FLAT_TOP_CORNERS,
     };
     let hex_corners: Vec<(f32, f32)> = base_corners.iter().map(|(x, y)| { (x * SCALE, y * SCALE) }).collect();
     let mut rng = thread_rng();

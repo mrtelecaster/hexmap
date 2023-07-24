@@ -1,12 +1,12 @@
-mod axial_coords; pub use axial_coords::*;
-mod cube_coords; pub use cube_coords::*;
+mod axial; pub use axial::*;
+mod cube; pub use cube::*;
 
 
 /// Trait for a type that can represent a coordinate on a hexagonal grid.
 /// 
 /// Included are [`AxialCoords`] and [`CubeCoords`] which implement this trait.
 pub trait HexCoords
-where Self: Sized
+where Self: Clone + Copy + Sized
 {
     /// Generates a contiguous line of coordinates `a` to `b`.
     /// 
@@ -34,7 +34,16 @@ where Self: Sized
     /// radius of `0` will return only the center tile. A radius of `1` will return the center tile
     /// and the immediately adjacent tiles, one step away from the center. A radius of `2` will
     /// return all tiles 2 steps or less from the center, and so on.
-    fn area(center: Self, radius: usize) -> Vec<Self>;
+    fn area(center: Self, radius: usize) -> Vec<Self>
+    {
+        let mut output = Vec::new();
+        for i in 0..radius+1
+        {
+            let mut ring = Self::ring(center, i);
+            output.append(&mut ring);
+        }
+        output
+    }
 
     /// Generates a list of adjacent hexagons to the given `center` hexagon. Order of the resulting
     /// list is not defined.

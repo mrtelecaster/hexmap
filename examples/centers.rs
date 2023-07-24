@@ -1,10 +1,10 @@
 use svg::{node::{element::{path::Data, Path, Text}}, Document};
-use hexmap::{constants::*, HexOrientation, AxialCoords, axial};
+use hexmap::{constants::*, Orientation, AxialCoords, axial};
 
 
 const HEX_SIZE: f32 = 120.0;
 const PADDING: f32 = 10.0;
-const ORIENTATION: HexOrientation = HexOrientation::PointyTop;
+const ORIENTATION: Orientation = Orientation::PointyTop;
 
 
 fn main()
@@ -48,15 +48,15 @@ fn main()
 }
 
 
-fn draw_hex(center: (f32, f32), orientation: HexOrientation) -> Data
+fn draw_hex(center: (f32, f32), orientation: Orientation) -> Data
 {
     let (cx, cy) = center;
     let cx = cx * HEX_SIZE;
     let cy = cy * HEX_SIZE;
     let points = match orientation
     {
-        HexOrientation::FlatTop => FLAT_TOP_CORNERS,
-        HexOrientation::PointyTop => POINTY_TOP_CORNERS,
+        Orientation::FlatTop => FLAT_TOP_CORNERS,
+        Orientation::PointyTop => POINTY_TOP_CORNERS,
     };
     let mut data = Data::new()
         .move_to((points[5].0 * HEX_SIZE + cx, points[5].1 * HEX_SIZE + cy));

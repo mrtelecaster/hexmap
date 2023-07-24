@@ -11,13 +11,13 @@ mod coords; pub use coords::*;
 mod map; pub use map::*;
 
 
-pub enum HexOrientation
+pub enum Orientation
 {
     PointyTop,
     FlatTop,
 }
 
-impl HexOrientation
+impl Orientation
 {
     /// Width of a tile in this orientation along the X-axis
     pub fn tile_width(&self) -> f32

@@ -1,5 +1,5 @@
-use std::ops::{Add, Sub};
-use crate::{CubeCoords, HexOrientation, HexCoords, axial};
+use std::ops::{Add, Sub, Mul};
+use crate::{CubeCoords, Orientation, HexCoords, axial};
 
 
 
@@ -37,6 +37,8 @@ impl AxialCoords
 
     pub const R: AxialCoords = AxialCoords{ q: 0, r: 1 };
 
+    pub const S: AxialCoords = AxialCoords{ q: -1, r: 1 };
+
     pub fn new(q: isize, r: isize) -> Self
     {
         Self{ q, r }
@@ -47,29 +49,29 @@ impl AxialCoords
         CubeCoords::distance(CubeCoords::from(a), CubeCoords::from(b))
     }
 
-    pub fn from_world(x: f32, y: f32, orientation: HexOrientation) -> Self {
+    pub fn from_world(x: f32, y: f32, orientation: Orientation) -> Self {
         let sqrt_3 = 3.0f32.sqrt();
         match orientation
         {
-            HexOrientation::PointyTop => {
+            Orientation::PointyTop => {
                 let q = sqrt_3 / 3.0 * x - 1.0 / 3.0 * y;
                 let r = 2.0 / 3.0 * y;
                 let s = -q - r;
                 let cube = CubeCoords::round(q, r, s);
                 AxialCoords::from(cube)
             },
-            HexOrientation::FlatTop => todo!(),
+            Orientation::FlatTop => todo!(),
         }
     }
 
-    pub fn to_world(&self, orientation: HexOrientation) -> (f32, f32)
+    pub fn to_world(&self, orientation: Orientation) -> (f32, f32)
     {
         match orientation
         {
-            HexOrientation::FlatTop => {
+            Orientation::FlatTop => {
                 todo!()
             },
-            HexOrientation::PointyTop => {
+            Orientation::PointyTop => {
                 let x = self.q as f32 * orientation.tile_width() + self.r as f32 * orientation.tile_width() / 2.0;
                 let y = self.r as f32 * orientation.tile_spacing_y();
                 (x, y)
@@ -77,14 +79,14 @@ impl AxialCoords
         }
     }
 
-    pub fn corners(&self, orientation: HexOrientation) -> [(f32, f32);6]
+    pub fn corners(&self, orientation: Orientation) -> [(f32, f32);6]
     {
         match orientation
         {
-            HexOrientation::FlatTop => {
+            Orientation::FlatTop => {
                 todo!()
             },
-            HexOrientation::PointyTop => {
+            Orientation::PointyTop => {
                 todo!()
             },
         }
@@ -94,27 +96,24 @@ impl AxialCoords
 impl HexCoords for AxialCoords
 {
     fn line(a: Self, b: Self) -> Vec<Self> {
-        let cube_coord_line: Vec<CubeCoords> = CubeCoords::line(a.into(), b.into());
-        let axial_coord_line: Vec<AxialCoords> = cube_coord_line.iter()
-            .map(|val| {AxialCoords::from(val)})
-            .collect();
-        axial_coord_line
+        let cube_line = CubeCoords::line(a.into(), b.into());
+        cube_line.iter().map(|val|{AxialCoords::from(val)}).collect()
     }
 
     fn ring(center: Self, radius: usize) -> Vec<Self> {
-        let cube_coord_ring: Vec<CubeCoords> = CubeCoords::ring(center.into(), radius);
-        let axial_coord_ring: Vec<AxialCoords> = cube_coord_ring.iter()
-            .map(|val|{AxialCoords::from(val)})
-            .collect();
-        axial_coord_ring
-    }
-
-    fn area(center: Self, radius: usize) -> Vec<Self> {
-        let cube_coord_area: Vec<CubeCoords> = CubeCoords::area(center.into(), radius);
-        let axial_coord_area: Vec<AxialCoords> = cube_coord_area.iter()
-            .map(|val|{AxialCoords::from(val)})
-            .collect();
-        axial_coord_area
+        if radius == 0 {
+            return vec![center];
+        }
+        let mut ring = Vec::new();
+        for i in 0..radius {
+            ring.push(center + AxialCoords::Q * radius + AxialCoords::S * i);
+            ring.push(center + AxialCoords::R * radius - AxialCoords::Q * i);
+            ring.push(center + AxialCoords::S * radius - AxialCoords::R * i);
+            ring.push(center - AxialCoords::Q * radius - AxialCoords::S * i);
+            ring.push(center - AxialCoords::R * radius + AxialCoords::Q * i);
+            ring.push(center - AxialCoords::S * radius + AxialCoords::R * i);
+        }
+        ring
     }
 
     fn adjacent(center: Self) -> Vec<Self> {
@@ -140,6 +139,9 @@ impl Add<Self> for AxialCoords
 
 impl From<CubeCoords> for AxialCoords
 {
+    /// Converts to [`AxialCoords`] from [`CubeCoords`]
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
     fn from(value: CubeCoords) -> Self {
         Self{ q: value.q, r: value.r }
     }
@@ -147,8 +149,21 @@ impl From<CubeCoords> for AxialCoords
 
 impl From<&CubeCoords> for AxialCoords
 {
+    /// Converts to [`AxialCoords`] from [`&CubeCoords`](CubeCoords)
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
     fn from(value: &CubeCoords) -> Self {
         Self{ q: value.q, r: value.r }
+    }
+}
+
+impl Mul<usize> for AxialCoords
+{
+    type Output = AxialCoords;
+
+    fn mul(self, rhs: usize) -> Self::Output
+    {
+        Self{ q: self.q * rhs as isize, r: self.r * rhs as isize }
     }
 }
 
@@ -210,6 +225,60 @@ mod tests
         fn add()
         {
             assert_eq!(axial!(0, 0), axial!(0, 0) + axial!(0, 0));
+        }
+    }
+
+    mod traits
+    {
+        use super::*;
+
+        mod hex_coords
+        {
+            use super::*;
+
+            #[test]
+            fn ring()
+            {
+                let ring = AxialCoords::ring(AxialCoords::ZERO, 0);
+                assert_eq!(1, ring.len());
+                assert!(ring.contains(&AxialCoords::ZERO));
+
+                let ring = AxialCoords::ring(AxialCoords::ZERO, 1);
+                assert_eq!(6, ring.len());
+                assert!(!ring.contains(&AxialCoords::ZERO));
+                assert!(ring.contains(&axial!(1, 0)));
+                assert!(ring.contains(&axial!(0, 1)));
+                assert!(ring.contains(&axial!(-1, 1)));
+                assert!(ring.contains(&axial!(-1, 0)));
+                assert!(ring.contains(&axial!(0, -1)));
+                assert!(ring.contains(&axial!(1, -1)));
+
+                let ring = AxialCoords::ring(AxialCoords::ZERO, 2);
+                assert_eq!(12, ring.len());
+                assert!(!ring.contains(&AxialCoords::ZERO));
+                assert!(!ring.contains(&axial!(1, 0)));
+                assert!(!ring.contains(&axial!(0, 1)));
+                assert!(!ring.contains(&axial!(-1, 1)));
+                assert!(!ring.contains(&axial!(-1, 0)));
+                assert!(!ring.contains(&axial!(0, -1)));
+                assert!(!ring.contains(&axial!(1, -1)));
+                assert!(ring.contains(&axial!(2, -2)));
+                assert!(ring.contains(&axial!(2, -1)));
+                assert!(ring.contains(&axial!(2, 0)));
+
+                let ring = AxialCoords::ring(axial!(1, -1), 0);
+                assert_eq!(1, ring.len());
+                assert!(ring.contains(&axial!(1, -1)));
+
+                let ring = AxialCoords::ring(axial!(1, -1), 1);
+                assert_eq!(6, ring.len());
+                assert!(ring.contains(&axial!(0, 0)));
+                assert!(ring.contains(&axial!(0, -1)));
+                assert!(ring.contains(&axial!(1, -2)));
+                assert!(ring.contains(&axial!(2, -2)));
+                assert!(ring.contains(&axial!(2, -1)));
+                assert!(ring.contains(&axial!(1, 0)));
+            }
         }
     }
 }
