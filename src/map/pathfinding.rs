@@ -110,7 +110,7 @@ where C: Clone + Copy + Eq + Hash + HexCoords
     /// function for a lower cost than whatever its previous node is.
     fn test_node(&mut self, test_coords: C, source_coords: C, cost_from_source: f32)
     {
-        if let Some(mut dest_node) = self.path_nodes.get_mut(&test_coords)
+        if let Some(dest_node) = self.path_nodes.get_mut(&test_coords)
         {
             if cost_from_source < dest_node.total_cost
             {
