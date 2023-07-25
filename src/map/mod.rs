@@ -49,6 +49,11 @@ where C: Copy + Eq + PartialEq + Hash + HexCoords
         let mut pathfinder = pathfinding::Pathfinder::default();
         pathfinder.find_path(start, destination, self)
     }
+
+    pub fn iter(&self) -> std::collections::hash_map::Iter<C, T>
+    {
+        self.map.iter()
+    }
 }
 
 
