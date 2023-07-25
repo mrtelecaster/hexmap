@@ -2,10 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 use crate::HexCoords;
 
 
-mod pathfinding;
-
-
-
+mod pathfinding; pub use pathfinding::PathfindingTile;
 
 
 pub struct HexMap<C, T>
