@@ -1,5 +1,5 @@
 use svg::{node::{element::{path::Data, Path, Text}}, Document};
-use hexmap::{constants::*, Orientation, AxialCoords, axial};
+use hexmap::{constants::*, Orientation, AxialCoords, axial, HexCoords};
 
 
 const HEX_SIZE: f32 = 120.0;

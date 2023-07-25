@@ -1,6 +1,6 @@
 use std::{ops::{Add, Mul, Neg, Sub}, fmt::Display};
 use lerp::Lerp;
-use crate::{HexCoords, cube};
+use crate::{HexCoords, cube, Orientation};
 
 use super::AxialCoords;
 
@@ -144,7 +144,17 @@ impl HexCoords for CubeCoords
             center + cube!(-1, 0, 1),
         ]
     }
+
+    fn to_world(&self, orientation: Orientation) -> (f32, f32) {
+        AxialCoords::from(self).to_world(orientation)
+    }
+
+    fn from_world(x: f32, y: f32, orientation: crate::Orientation) -> Self {
+        Self::from(AxialCoords::from_world(x, y, orientation))
+    }
 }
+
+// TRAITS: Math Operations ---------------------------------------------------------------------- //
 
 impl Add<CubeCoords> for CubeCoords
 {
@@ -179,47 +189,6 @@ impl Add<&CubeCoords> for &CubeCoords
 
     fn add(self, rhs: &CubeCoords) -> Self::Output {
         CubeCoords::new(self.q + rhs.q, self.r + rhs.r, self.s + rhs.s)
-    }
-}
-
-impl Display for CubeCoords
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({}, {}, {})", self.q, self.r, self.s)
-    }
-}
-
-impl From<[f32;3]> for CubeCoords
-{
-    fn from(value: [f32;3]) -> Self {
-        Self::new(value[0].round() as isize, value[1].round() as isize, value[2].round() as isize)
-    }
-}
-
-impl From<AxialCoords> for CubeCoords
-{
-    /// Converts to [`CubeCoords`] from [`AxialCoords`]
-    /// 
-    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
-    fn from(value: AxialCoords) -> Self {
-        Self{ q: value.q, r: value.r, s: -value.q - value.r }
-    }
-}
-
-impl From<&AxialCoords> for CubeCoords
-{
-    fn from(value: &AxialCoords) -> Self {
-        Self{ q: value.q, r: value.r, s: -value.q - value.r }
-    }
-}
-
-impl Lerp<f32> for CubeCoords
-{
-    fn lerp(self, other: Self, t: f32) -> Self {
-        let q = (self.q as f32).lerp(other.q as f32, t);
-        let r = (self.r as f32).lerp(other.r as f32, t);
-        let s: f32 = (self.s as f32).lerp(other.s as f32, t);
-        Self::round(q, r, s)
     }
 }
 
@@ -267,6 +236,52 @@ impl Sub<Self> for CubeCoords
         CubeCoords::from(AxialCoords::from(self) - AxialCoords::from(rhs))
     }
 }
+
+// TRAITS: Conversion --------------------------------------------------------------------------- //
+
+impl From<[f32;3]> for CubeCoords
+{
+    fn from(value: [f32;3]) -> Self {
+        Self::new(value[0].round() as isize, value[1].round() as isize, value[2].round() as isize)
+    }
+}
+
+impl From<AxialCoords> for CubeCoords
+{
+    /// Converts to [`CubeCoords`] from [`AxialCoords`]
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
+    fn from(value: AxialCoords) -> Self {
+        Self{ q: value.q, r: value.r, s: -value.q - value.r }
+    }
+}
+
+impl From<&AxialCoords> for CubeCoords
+{
+    fn from(value: &AxialCoords) -> Self {
+        Self{ q: value.q, r: value.r, s: -value.q - value.r }
+    }
+}
+
+// TRAITS: Other -------------------------------------------------------------------------------- //
+
+impl Display for CubeCoords
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}, {}, {})", self.q, self.r, self.s)
+    }
+}
+
+impl Lerp<f32> for CubeCoords
+{
+    fn lerp(self, other: Self, t: f32) -> Self {
+        let q = (self.q as f32).lerp(other.q as f32, t);
+        let r = (self.r as f32).lerp(other.r as f32, t);
+        let s: f32 = (self.s as f32).lerp(other.s as f32, t);
+        Self::round(q, r, s)
+    }
+}
+
 
 #[cfg(test)]
 mod tests

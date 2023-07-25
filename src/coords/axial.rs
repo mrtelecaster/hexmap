@@ -48,49 +48,6 @@ impl AxialCoords
     {
         CubeCoords::distance(CubeCoords::from(a), CubeCoords::from(b))
     }
-
-    pub fn from_world(x: f32, y: f32, orientation: Orientation) -> Self {
-        let sqrt_3 = 3.0f32.sqrt();
-        match orientation
-        {
-            Orientation::PointyTop => {
-                let q = sqrt_3 / 3.0 * x - 1.0 / 3.0 * y;
-                let r = 2.0 / 3.0 * y;
-                let s = -q - r;
-                let cube = CubeCoords::round(q, r, s);
-                AxialCoords::from(cube)
-            },
-            Orientation::FlatTop => todo!(),
-        }
-    }
-
-    pub fn to_world(&self, orientation: Orientation) -> (f32, f32)
-    {
-        match orientation
-        {
-            Orientation::FlatTop => {
-                todo!()
-            },
-            Orientation::PointyTop => {
-                let x = self.q as f32 * orientation.tile_width() + self.r as f32 * orientation.tile_width() / 2.0;
-                let y = self.r as f32 * orientation.tile_spacing_y();
-                (x, y)
-            },
-        }
-    }
-
-    pub fn corners(&self, orientation: Orientation) -> [(f32, f32);6]
-    {
-        match orientation
-        {
-            Orientation::FlatTop => {
-                todo!()
-            },
-            Orientation::PointyTop => {
-                todo!()
-            },
-        }
-    }
 }
 
 impl HexCoords for AxialCoords
@@ -126,7 +83,39 @@ impl HexCoords for AxialCoords
             center + axial!(-1, 0),
         ]
     }
+
+    fn from_world(x: f32, y: f32, orientation: Orientation) -> Self {
+        let sqrt_3 = 3.0f32.sqrt();
+        match orientation
+        {
+            Orientation::PointyTop => {
+                let q = sqrt_3 / 3.0 * x - 1.0 / 3.0 * y;
+                let r = 2.0 / 3.0 * y;
+                let s = -q - r;
+                let cube = CubeCoords::round(q, r, s);
+                AxialCoords::from(cube)
+            },
+            Orientation::FlatTop => todo!(),
+        }
+    }
+
+    fn to_world(&self, orientation: Orientation) -> (f32, f32)
+    {
+        match orientation
+        {
+            Orientation::FlatTop => {
+                todo!()
+            },
+            Orientation::PointyTop => {
+                let x = self.q as f32 * orientation.tile_width() + self.r as f32 * orientation.tile_width() / 2.0;
+                let y = self.r as f32 * orientation.tile_spacing_y();
+                (x, y)
+            },
+        }
+    }
 }
+
+// TRAITS: MATH OPERATIONS ---------------------------------------------------------------------- //
 
 impl Add<Self> for AxialCoords
 {
@@ -134,26 +123,6 @@ impl Add<Self> for AxialCoords
 
     fn add(self, rhs: Self) -> Self::Output {
         Self{ q: self.q + rhs.q, r: self.r + rhs.r }
-    }
-}
-
-impl From<CubeCoords> for AxialCoords
-{
-    /// Converts to [`AxialCoords`] from [`CubeCoords`]
-    /// 
-    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
-    fn from(value: CubeCoords) -> Self {
-        Self{ q: value.q, r: value.r }
-    }
-}
-
-impl From<&CubeCoords> for AxialCoords
-{
-    /// Converts to [`AxialCoords`] from [`&CubeCoords`](CubeCoords)
-    /// 
-    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
-    fn from(value: &CubeCoords) -> Self {
-        Self{ q: value.q, r: value.r }
     }
 }
 
@@ -173,6 +142,28 @@ impl Sub<Self> for AxialCoords
 
     fn sub(self, rhs: Self) -> Self::Output {
         Self{ q: self.q - rhs.q, r: self.r - rhs.r }
+    }
+}
+
+// TRAITS: CONVERSION --------------------------------------------------------------------------- //
+
+impl From<CubeCoords> for AxialCoords
+{
+    /// Converts to [`AxialCoords`] from [`CubeCoords`]
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
+    fn from(value: CubeCoords) -> Self {
+        Self{ q: value.q, r: value.r }
+    }
+}
+
+impl From<&CubeCoords> for AxialCoords
+{
+    /// Converts to [`AxialCoords`] from [`&CubeCoords`](CubeCoords)
+    /// 
+    /// <https://www.redblobgames.com/grids/hexagons/#conversions-axial>
+    fn from(value: &CubeCoords) -> Self {
+        Self{ q: value.q, r: value.r }
     }
 }
 

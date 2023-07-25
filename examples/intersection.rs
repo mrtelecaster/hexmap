@@ -3,7 +3,7 @@
 //! This is done by "shooting" a large number of random points onto an image plane and coloring them
 //! based on which hexagon they land in. The results are depicted in `images/bullseye.svg`
 
-use hexmap::{AxialCoords, axial, Orientation, constants::*};
+use hexmap::{AxialCoords, axial, Orientation, constants::*, HexCoords};
 use rand::thread_rng;
 use rand_distr::{Distribution, Normal};
 use svg::{node::element::{Circle, path::Data, Path}, Document};

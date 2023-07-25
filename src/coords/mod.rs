@@ -1,6 +1,8 @@
 mod axial; pub use axial::*;
 mod cube; pub use cube::*;
 
+use crate::{Orientation, constants::{FLAT_TOP_CORNERS, POINTY_TOP_CORNERS}};
+
 
 /// Trait for a type that can represent a coordinate on a hexagonal grid.
 /// 
@@ -28,6 +30,14 @@ where Self: Clone + Copy + Sized
     /// A radius of `0` returns only the center tile.
     fn ring(center: Self, radius: usize) -> Vec<Self>;
 
+    /// Generates a list of adjacent hexagons to the given `center` hexagon. Order of the resulting
+    /// list is not defined.
+    fn adjacent(center: Self) -> Vec<Self>;
+
+    fn to_world(&self, orientation: Orientation) -> (f32, f32);
+
+    fn from_world(x: f32, y: f32, orientation: Orientation) -> Self;
+
     /// Generates a filled hexagonal area centered on the given `center` coordinates.
     /// 
     /// The `radius` argument represents how far away from the center the area will encompass. A
@@ -45,7 +55,25 @@ where Self: Clone + Copy + Sized
         output
     }
 
-    /// Generates a list of adjacent hexagons to the given `center` hexagon. Order of the resulting
-    /// list is not defined.
-    fn adjacent(center: Self) -> Vec<Self>;
+    fn corners(&self, orientation: Orientation) -> [(f32, f32);6]
+    {
+        let (center_x, center_y) = self.to_world(orientation);
+        let corners = match orientation {
+            Orientation::FlatTop => {
+                FLAT_TOP_CORNERS
+            },
+            Orientation::PointyTop => {
+                POINTY_TOP_CORNERS
+            },
+        };
+        let output_corners = [
+            (center_x + corners[0].0, center_y + corners[0].1),
+            (center_x + corners[1].0, center_y + corners[1].1),
+            (center_x + corners[2].0, center_y + corners[2].1),
+            (center_x + corners[3].0, center_y + corners[3].1),
+            (center_x + corners[4].0, center_y + corners[4].1),
+            (center_x + corners[5].0, center_y + corners[5].1),
+        ];
+        output_corners
+    }
 }

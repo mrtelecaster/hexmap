@@ -11,6 +11,7 @@ mod coords; pub use coords::*;
 mod map; pub use map::*;
 
 
+#[derive(Clone, Copy, Debug)]
 pub enum Orientation
 {
     PointyTop,

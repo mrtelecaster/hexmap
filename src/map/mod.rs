@@ -1,11 +1,12 @@
 use std::{collections::HashMap, hash::Hash};
-use crate::HexCoords;
+use crate::{HexCoords, AxialCoords, CubeCoords};
 
 
 mod pathfinding;
 
 
-
+pub type AxialMap<T> = HexMap<AxialCoords, T>;
+pub type CubeMap<T> = HexMap<CubeCoords, T>;
 
 
 pub struct HexMap<C, T>
@@ -128,19 +129,32 @@ mod tests
         /// Ensures that a straight path is drawn between tiles when there is no
         /// pathfinding cost factor
         #[test]
-        #[ignore]
         fn straight_path()
         {
-            let start: CubeCoords = cube!(-2, 0, 2);
-            let end: CubeCoords = cube!(2, 0, -2);
             let mut map: HexMap<CubeCoords, PathTestTile> = HexMap::new();
-            map.insert_area(CubeCoords::ZERO, 2, PathTestTile::Cheap);
-            let path = map.find_path(start, end).expect("Expected to find bath between start and end, but `None` was returned");
+            map.insert_area(CubeCoords::ZERO, 3, PathTestTile::Cheap);
+
+            let path = map.find_path(cube!(0, 0, 0), cube!(1, 0, -1)).unwrap();
+            assert_eq!(1, path.len());
+            assert_eq!(cube!(1, 0, -1), path[0]);
+
+            let path = map.find_path(cube!(-1, 0, 1), cube!(1, 0, -1)).unwrap();
+            assert_eq!(2, path.len());
+            assert_eq!(cube!(0, 0, 0), path[0]);
+            assert_eq!(cube!(1, 0, -1), path[1]);
+
+            let path = map.find_path(cube!(-1, 0, 1), cube!(2, 0, -2)).unwrap();
+            assert_eq!(3, path.len());
+            assert_eq!(cube!(0, 0, 0), path[0]);
+            assert_eq!(cube!(1, 0, -1), path[1]);
+            assert_eq!(cube!(2, 0, -2), path[2]);
+
+            let path = map.find_path(cube!(-2, 0, 2), cube!(2, 0, -2)).unwrap();
             assert_eq!(4, path.len());
             assert_eq!(cube!(-1, 0, 1), path[0]);
-            assert_eq!(cube!(0, 0, 0), path[0]);
-            assert_eq!(cube!(1, 0, -1), path[0]);
-            assert_eq!(cube!(2, 0, -2), path[0]);
+            assert_eq!(cube!(0, 0, 0), path[1]);
+            assert_eq!(cube!(1, 0, -1), path[2]);
+            assert_eq!(cube!(2, 0, -2), path[3]);
         }
 
         /// Ensures that the most cost efficient path is chosen between tiles,
