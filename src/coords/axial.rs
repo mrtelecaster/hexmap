@@ -168,7 +168,6 @@ impl From<&CubeCoords> for AxialCoords
 }
 
 
-
 #[cfg(test)]
 mod tests
 {
