@@ -1,6 +1,9 @@
 use std::{collections::HashMap, hash::Hash};
 use crate::{HexCoords, AxialCoords, CubeCoords};
 
+#[cfg(feature="bevy")]
+use bevy::prelude::Resource;
+
 
 mod pathfinding; pub use pathfinding::PathfindingTile;
 
@@ -8,6 +11,7 @@ pub type AxialMap<T> = HexMap<AxialCoords, T>;
 pub type CubeMap<T> = HexMap<CubeCoords, T>;
 
 
+#[cfg_attr(feature="bevy", derive(Resource))]
 pub struct HexMap<C, T>
 {
     map: HashMap<C, T>
