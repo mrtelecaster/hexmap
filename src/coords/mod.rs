@@ -81,12 +81,12 @@ where Self: Clone + Copy + Sized
     }
 
     #[cfg(feature="bevy")]
-    pub fn from_vec3(vec: Vec3, orientation: Orientation) -> Self {
+    fn from_vec3(vec: Vec3, orientation: Orientation) -> Self {
         Self::from_world(vec.x, vec.z, orientation)
     }
 
     #[cfg(feature="bevy")]
-    pub fn to_vec3(&self, orientation: Orientation) -> Vec3 {
+    fn to_vec3(&self, orientation: Orientation) -> Vec3 {
         let (x, z) = self.to_world(orientation);
         bevy::prelude::Vec3::new(x, 0.0, z)
     }
