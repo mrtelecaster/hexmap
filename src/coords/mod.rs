@@ -1,6 +1,9 @@
 mod axial; pub use axial::*;
 mod cube; pub use cube::*;
 
+#[cfg(feature="bevy")]
+use bevy::prelude::Vec3;
+
 use crate::{Orientation, constants::{FLAT_TOP_CORNERS, POINTY_TOP_CORNERS}};
 
 
