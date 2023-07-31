@@ -18,18 +18,6 @@ pub struct CubeCoords
     pub s: isize,
 }
 
-/// Creates a new set of [`CubeCoords`](crate::CubeCoords) with the provided values. Acts as a
-/// shortcut for [`CubeCoords::new`](crate::CubeCoords::new)
-/// 
-/// ```
-/// use hexmap::{CubeCoords, cube};
-/// assert_eq!(CubeCoords::new(1, 2, -3), cube!(1, 2, -3));
-/// ```
-#[macro_export]
-macro_rules! cube {
-    ($q:literal, $r:literal, $s:literal) => { CubeCoords::new($q, $r, $s) }
-}
-
 impl CubeCoords
 {
     // Constants ------------------------------------------------------------ //

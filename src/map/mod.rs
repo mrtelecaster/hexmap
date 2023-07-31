@@ -4,8 +4,7 @@ use crate::{HexCoords, AxialCoords, CubeCoords};
 #[cfg(feature="bevy")]
 use bevy::prelude::Resource;
 
-
-mod pathfinding; pub use pathfinding::PathfindingTile;
+mod pathfinding; pub use pathfinding::*;
 
 pub type AxialMap<T> = HexMap<AxialCoords, T>;
 pub type CubeMap<T> = HexMap<CubeCoords, T>;
@@ -50,11 +49,20 @@ where C: Copy + Eq + PartialEq + Hash + HexCoords
         }
     }
 
-    pub fn find_path(&self, start: C, destination: C) -> Option<Vec<C>>
-    where C: Copy + PartialEq, T: pathfinding::PathfindingTile
+    
+    pub fn find_path<F>(&self, start: C, destination: C, cost_fn: F) -> Option<Vec<C>>
+    where C: Copy + PartialEq, F: Fn(C, C, &HexMap<C, T>) -> f32
     {
-        let mut pathfinder = pathfinding::Pathfinder::default();
-        pathfinder.find_path(start, destination, self)
+        let mut pathfinder = PathMap::default().starting_from(start);
+        while let Some(next_coords) = pathfinder.get_next_node()
+        {
+            if next_coords == destination {
+                return Some(pathfinder.trace_path(destination));
+            }
+            pathfinder.eval_coords(next_coords, self, &cost_fn );
+            pathfinder.set_coords_searched(next_coords);
+        }
+        None
     }
 
     pub fn iter(&self) -> std::collections::hash_map::Iter<C, T>
@@ -88,7 +96,6 @@ mod tests
     mod pathfinding
     {
         use super::*;
-        use crate::map::pathfinding::PathfindingTile;
 
         #[derive(Clone)]
         enum PathTestTile
@@ -97,13 +104,12 @@ mod tests
             Expensive,
         }
 
-        impl PathfindingTile for PathTestTile
+        fn cost_fn(_start: CubeCoords, end: CubeCoords, map: &HexMap<CubeCoords, PathTestTile>) -> f32
         {
-            fn pathfind_cost(&self) -> f32 {
-                match self {
-                    Self::Cheap => 0.5,
-                    Self::Expensive => 2.0,
-                }
+            match map.get(end).unwrap()
+            {
+                PathTestTile::Cheap => 0.5,
+                PathTestTile::Expensive => 2.0,
             }
         }
 
@@ -115,7 +121,7 @@ mod tests
             let start: CubeCoords = CubeCoords::ZERO;
             let end: CubeCoords = CubeCoords::ZERO;
             let map: HexMap<CubeCoords, PathTestTile> = HexMap::new();
-            let path = map.find_path(start, end).expect("Expected to return path, got None instead");
+            let path = map.find_path(start, end, cost_fn).expect("Expected to return path, got None instead");
             assert_eq!(0, path.len());
         }
 
@@ -128,7 +134,7 @@ mod tests
             let end: CubeCoords = cube!(0, 1, -1);
             let mut map: HexMap<CubeCoords, PathTestTile> = HexMap::new();
             map.insert_area(CubeCoords::ZERO, 2, PathTestTile::Cheap);
-            let path = map.find_path(start, end).expect("Expected to return path, got None instead");
+            let path = map.find_path(start, end, cost_fn).expect("Expected to return path, got None instead");
             assert_eq!(1, path.len());
             assert!(path.contains(&end));
             assert!(!path.contains(&start));
@@ -142,22 +148,22 @@ mod tests
             let mut map: HexMap<CubeCoords, PathTestTile> = HexMap::new();
             map.insert_area(CubeCoords::ZERO, 3, PathTestTile::Cheap);
 
-            let path = map.find_path(cube!(0, 0, 0), cube!(1, 0, -1)).unwrap();
+            let path = map.find_path(cube!(0, 0, 0), cube!(1, 0, -1), cost_fn).unwrap();
             assert_eq!(1, path.len());
             assert_eq!(cube!(1, 0, -1), path[0]);
 
-            let path = map.find_path(cube!(-1, 0, 1), cube!(1, 0, -1)).unwrap();
+            let path = map.find_path(cube!(-1, 0, 1), cube!(1, 0, -1), cost_fn).unwrap();
             assert_eq!(2, path.len());
             assert_eq!(cube!(0, 0, 0), path[0]);
             assert_eq!(cube!(1, 0, -1), path[1]);
 
-            let path = map.find_path(cube!(-1, 0, 1), cube!(2, 0, -2)).unwrap();
+            let path = map.find_path(cube!(-1, 0, 1), cube!(2, 0, -2), cost_fn).unwrap();
             assert_eq!(3, path.len());
             assert_eq!(cube!(0, 0, 0), path[0]);
             assert_eq!(cube!(1, 0, -1), path[1]);
             assert_eq!(cube!(2, 0, -2), path[2]);
 
-            let path = map.find_path(cube!(-2, 0, 2), cube!(2, 0, -2)).unwrap();
+            let path = map.find_path(cube!(-2, 0, 2), cube!(2, 0, -2), cost_fn).unwrap();
             assert_eq!(4, path.len());
             assert_eq!(cube!(-1, 0, 1), path[0]);
             assert_eq!(cube!(0, 0, 0), path[1]);
@@ -184,7 +190,7 @@ mod tests
             map.insert(cube!(1, 1, -2), PathTestTile::Cheap);
             map.insert(cube!(2, 0, -2), PathTestTile::Cheap);
             
-            let path = map.find_path(start, end).expect("Expected to find path between start and end, but `None` was returned");
+            let path = map.find_path(start, end, cost_fn).expect("Expected to find path between start and end, but `None` was returned");
             assert_eq!(6, path.len());
             assert_eq!(cube!(-1, -1, 2), path[0]);
             assert_eq!(cube!(0, -1, 1), path[1]);
@@ -206,7 +212,7 @@ mod tests
             map.insert(start, PathTestTile::Cheap);
             map.insert(end, PathTestTile::Cheap);
             // find path - should be `None`
-            let path = map.find_path(start, end);
+            let path = map.find_path(start, end, cost_fn);
             assert_eq!(None, path);
         }
     }

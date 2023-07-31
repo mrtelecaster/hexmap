@@ -1,155 +1,181 @@
-use std::{collections::{HashMap, HashSet}, hash::Hash};
+use std::{
+    collections::{HashSet, HashMap},
+    hash::Hash,
+};
 
 use crate::{HexCoords, HexMap};
 
 
-pub trait PathfindingTile
-{
-    fn pathfind_cost(&self) -> f32 {
-        0.05
-    }
-}
-
-
-
-/// A node in the pathfinding algorithm
-struct PathNode<C>
+/// Node used for pathfinding. The node graph of the [`PathMap`] struct uses this type for its nodes.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PathNode<C>
 {
     total_cost: f32,
-    prev_node: Option<C>,
+    prev_coords: Option<C>
 }
 
-
-pub struct Pathfinder<C>
+impl<C> Default for PathNode<C>
 {
-    coords_to_search: HashSet<C>,
-    searched_coords: HashSet<C>,
-    path_nodes: HashMap<C, PathNode<C>>,
+    fn default() -> Self {
+        Self { total_cost: 0.0, prev_coords: None }
+    }
 }
 
-impl<C> Pathfinder<C>
+
+/// Contains the data needed while calculating a path from a [`HexMap`](crate::HexMap)
+/// 
+/// Acts as a node graph of pathfinding nodes for the pathfinding algorithm, which for the moment
+/// is [just Djikstra's algorithm](https://en.wikipedia.org/wiki/Dijkstra's_algorithm)
+#[derive(Clone, Debug)]
+pub struct PathMap<C>
+{
+    /// Set of coordinates that still have yet to be searched and require evaluation
+    /// 
+    /// The `coords_to_search` set and `searched_coords` set are MUTUALLY EXCLUSIVE. A coordinate
+    /// that's in one set should NOT be in the other.
+    coords_to_search: HashSet<C>,
+
+    /// Set of coordinates that have been searched and no longer need to be evaluated
+    /// 
+    /// The `coords_to_search` set and `searched_coords` set are MUTUALLY EXCLUSIVE. A coordinate
+    /// that's in one set should NOT be in the other.
+    searched_coords: HashSet<C>,
+
+    /// Map of the actual pathfinding nodes, with their costs and references to their previous nodes
+    nodes: HashMap<C, PathNode<C>>,
+}
+
+impl<C> PathMap<C>
 where C: Clone + Copy + Eq + Hash + HexCoords
 {
-    pub fn find_path<T>(&mut self, start: C, dest: C, map: &HexMap<C, T>) -> Option<Vec<C>>
-    where T: PathfindingTile
+    /// Initializes the map with a single starting node to branch from
+    pub fn starting_from(mut self, start_coords: C) -> Self
     {
-        if start == dest { return Some(Vec::new()); }
-        self.coords_to_search.clear();
-        self.searched_coords.clear();
-        self.path_nodes.clear();
-        self.insert(start, PathNode{ total_cost: 0.0, prev_node: None });
-        while let Some(test_coords) = self.get_next_coords()
-        {
-            if test_coords == dest {
-                return Some(self.unroll_path(test_coords));
-            }
-            self.search_node(test_coords, map);
-        }
-        None
+        self.add_node(start_coords, PathNode::default());
+        self
     }
 
-    /// Gets the next coordinates to search at the beginning of a new loop iteration.
+    /// Adds a new pathfinding node to the pathmap, adding the coordinates of the new node to the
+    /// `coords_to_search` set. If a node already exists at the given coordinates, it is overwritten.
     /// 
-    /// Only a coordinate in the [`coords_to_search`] set can be returned. The specific coordinate
-    /// returned will correspond to whichever `path_node` has the lowest total cost so far.
-    fn get_next_coords(&mut self) -> Option<C>
+    /// Use this function ONLY if you know that the node at the given coordinates has NOT been
+    /// searched yet. This could cause searched nodes to accidentally become unsearched during
+    /// pathfinding, leading to an infinite loop. For example, this function is suitable for
+    /// initializing an empty map with the starting or "seed" node at the beginning of pathfinding,
+    /// or with nodes for unit testing.
+    fn add_node(&mut self, coords: C, node: PathNode<C>)
     {
-        let mut best_coords = None;
-        let mut best_cost = 0.0;
-        for coords in self.coords_to_search.iter()
-        {
-            let node = self.get(&coords).unwrap();
-            if best_coords.is_none() || node.total_cost < best_cost
-            {
-                best_coords = Some(coords.clone());
-                best_cost = node.total_cost;
+        self.coords_to_search.insert(coords);
+        self.nodes.insert(coords, node);
+    }
+
+    /// Evaluates the given coordinates against its neighbors, updating any neighbors that can be
+    /// reached from this coordinate for lower cost than their existing previous coords.
+    pub fn eval_coords<F, T>(&mut self, source: C, map: &HexMap<C, T>, cost_fn: F)
+    where F: Fn(C, C, &HexMap<C, T>) -> f32
+    {
+        let adjacent_coords = HexCoords::adjacent(source);
+        let source_node = self.get_node(source).unwrap().clone();
+        for neighbor_coord in adjacent_coords {
+            if let Some(_neighbor_tile) = map.get(neighbor_coord) {
+                let move_cost = source_node.total_cost + cost_fn(source, neighbor_coord, map);
+                self.eval_move(source, neighbor_coord, move_cost);
             }
         }
-        if let Some(c) = best_coords
-        {
-            self.coords_to_search.remove(&c);
-        }
-        best_coords
     }
 
-    /// Inserts a new node at the given coordinates. Also adds the coords to the
-    /// `coords_to_search` set.
-    fn insert(&mut self, coord: C, node: PathNode<C>)
+    /// Evaluates a single move from one tile to another. If the destination tile can be reached
+    /// from the source tile for lower cost than its existing source tile, it will be updated to use
+    /// the source node given here instead.
+    fn eval_move(&mut self, source: C, dest: C, cost: f32)
     {
-        self.path_nodes.insert(coord, node);
-        self.coords_to_search.insert(coord);
-    }
-
-    fn get(&self, coord: &C) -> Option<&PathNode<C>>
-    {
-        self.path_nodes.get(&coord)
-    }
-
-    /// Searches the path node at the given coordinates. This will search all nodes adjacent to this
-    /// one, and, if they can be reached for a lower cost from this node than whatever their
-    /// previous node is, they will be updated to now have this as their previous node.
-    /// 
-    /// Once the pathfinding logic is complete, the coords will be removed from the
-    /// `coords_to_search` set and added to the `searched_coords` set
-    fn search_node<T>(&mut self, coord: C, map: &HexMap<C, T>)
-    where C: HexCoords, T: PathfindingTile
-    {
-        let source_cost = self.path_nodes.get(&coord).unwrap().total_cost;
-        for adjacent_coord in C::adjacent(coord)
-        {
-            if let Some(dest_tile) = map.get(adjacent_coord)
-            {
-                let new_cost = source_cost + dest_tile.pathfind_cost();
-                self.test_node(adjacent_coord, coord, new_cost);
-            }
-        }
-        self.searched_coords.insert(coord);
-    }
-
-    /// Tests a single node to see if it can be reached from the source node provided by this
-    /// function for a lower cost than whatever its previous node is.
-    fn test_node(&mut self, test_coords: C, source_coords: C, cost_from_source: f32)
-    {
-        if let Some(dest_node) = self.path_nodes.get_mut(&test_coords)
-        {
-            if cost_from_source < dest_node.total_cost
-            {
-                dest_node.total_cost = cost_from_source;
-                dest_node.prev_node = Some(source_coords);
+        if let Some(node) = self.nodes.get_mut(&dest) {
+            if cost < node.total_cost {
+                node.total_cost = cost;
+                node.prev_coords = Some(source);
             }
         } else {
-            self.coords_to_search.insert(test_coords);
-            self.path_nodes.insert(test_coords, PathNode{ total_cost: cost_from_source, prev_node: Some(source_coords) });
+            let new_node = PathNode{ total_cost: cost, prev_coords: Some(source) };
+            self.insert_node(dest, new_node);
         }
     }
 
-    fn unroll_path(&self, unroll_from: C) -> Vec<C>
+    /// Traces a path to the given coordinates, so long as those coordinates have been given a path node
+    pub fn trace_path(&self, dest: C) -> Vec<C>
     {
         let mut path = Vec::new();
-        let mut next_coords = Some(unroll_from);
-        while let Some(c) = next_coords
-        {
-            
-            let node = self.path_nodes.get(&c).unwrap();
-            if node.prev_node.is_some()
-            {
+        let mut next_coords = Some(dest);
+        while let Some(c) = next_coords {
+            let node = self.nodes.get(&c).unwrap();
+            if node.prev_coords.is_some() {
                 path.push(c);
             }
-            next_coords = node.prev_node;
+            next_coords = node.prev_coords;
         }
         path.reverse();
         path
     }
+
+    /// Adds a new pathfinding node to the map if it does not exist. If it does exist, the existing
+    /// node's total cost is compared with the new node's cost, and if the new node's is lower, the
+    /// existing node is replaced.
+    pub fn insert_node(&mut self, coords: C, new_node: PathNode<C>)
+    {
+        if let Some(existing_node) = self.get_node(coords)
+        {
+            if new_node.total_cost < existing_node.total_cost
+            {
+                self.nodes.insert(coords, new_node);
+            }
+        } else {
+            self.add_node(coords, new_node);
+        }
+    }
+
+    /// Retrieves the node at the given coordinates, if one exists. If there is no node at the
+    /// coordinates, [`None`] is returned. 
+    fn get_node(&self, coords: C) -> Option<&PathNode<C>>
+    {
+        self.nodes.get(&coords)
+    }
+
+    /// Returns the coordinates of the next node to be evaluated, chosen from the `coords_to_search`
+    /// set.
+    /// 
+    /// If no nodes remain to be searched, this function returns `None`.
+    pub fn get_next_node(&self) -> Option<C>
+    {
+        let mut best_coords = None;
+        let mut lowest_cost = 0.0;
+
+        for coords in self.coords_to_search.iter()
+        {
+            let node = self.nodes.get(coords).unwrap();
+            if best_coords.is_none() || node.total_cost < lowest_cost
+            {
+                best_coords = Some(*coords);
+                lowest_cost = node.total_cost;
+            }
+        }
+
+        best_coords
+    }
+
+    /// Moves the given coords from the `coords_to_search` set to the `searched_coords` set
+    pub fn set_coords_searched(&mut self, searched_coords: C)
+    {
+        self.coords_to_search.remove(&searched_coords);
+        self.searched_coords.insert(searched_coords);
+    }
 }
 
-impl<C> Default for Pathfinder<C>
-where C: Clone + Copy + Eq + Hash
+impl<C> Default for PathMap<C>
 {
     fn default() -> Self {
-        Pathfinder{
+        Self{
             coords_to_search: HashSet::new(),
             searched_coords: HashSet::new(),
-            path_nodes: HashMap::new(),
+            nodes: HashMap::new(),
         }
     }
 }
@@ -159,55 +185,164 @@ where C: Clone + Copy + Eq + Hash
 mod tests
 {
     use super::*;
-    use crate::{axial, AxialCoords, HexMap};
+    use crate::{axial, AxialCoords};
 
-    pub struct TestTile;
-
-    impl PathfindingTile for TestTile {}
-
-    /// Ensures that the function returns the lowest cost coords, and removes
-    /// them from the `coords_to_search` set.
-    /// 
-    /// Tests that the returned coords are the lowest cost UNSEARCHED
-    /// coordinates so far, ensuring that a higher cost unsearched coordinate or
-    /// a lower cost but already searched coordinate is not returned.
     #[test]
-    fn get_next_coords()
+    fn add_node()
     {
-        let mut pathfinder: Pathfinder<AxialCoords> = Pathfinder::default();
-        pathfinder.insert(axial!(0, 1), PathNode{ total_cost: 2.0, prev_node: None });
-        pathfinder.insert(axial!(2, 0), PathNode{ total_cost: 1.0, prev_node: Some(axial!(0, 0)) });
-        pathfinder.insert(axial!(0, 0), PathNode{ total_cost: 0.0, prev_node: None });
-        pathfinder.coords_to_search.remove(&axial!(0, 0));
-        pathfinder.searched_coords.insert(axial!(0, 0));
-        assert_eq!(Some(axial!(2, 0)), pathfinder.get_next_coords());
-        assert_eq!(Some(axial!(0, 1)), pathfinder.get_next_coords());
-        assert_eq!(None, pathfinder.get_next_coords());
+        let coords = axial!(1, 0);
+        let mut map = PathMap::default();
+        assert_eq!(false, map.coords_to_search.contains(&coords));
+        assert_eq!(false, map.searched_coords.contains(&coords));
+        assert_eq!(false, map.nodes.contains_key(&coords));
+
+        let new_node = PathNode{
+            total_cost: 1.0,
+            prev_coords: Some(axial!(0, 0))
+        };
+        map.add_node(coords, new_node.clone());
+        assert_eq!(true, map.coords_to_search.contains(&coords));
+        assert_eq!(false, map.searched_coords.contains(&coords));
+        assert_eq!(true, map.nodes.contains_key(&coords));
+        assert_eq!(&new_node, map.get_node(coords).unwrap());
     }
 
     #[test]
-    #[ignore]
-    fn search_node()
+    fn contains_node_at()
     {
-        todo!()
+        let mut map = PathMap::default();
+        map.add_node(axial!(0, 0), PathNode{ total_cost: 0.0, prev_coords: None });
+        assert!(map.get_node(axial!(0, 0)).is_some());
+        assert!(map.get_node(axial!(1, 0)).is_none());
     }
 
     #[test]
-    fn test_node()
+    fn eval_move()
     {
-        let mut pathfinder: Pathfinder<AxialCoords> = Pathfinder::default();
-        let mut map: HexMap<AxialCoords, TestTile> = HexMap::new();
-        pathfinder.insert(axial!(0, 0), PathNode{ total_cost: 0.0, prev_node: None });
-        map.insert(axial!(0, 0), TestTile);
-        pathfinder.insert(axial!(1, 0), PathNode{ total_cost: 1.0, prev_node: None });
-        map.insert(axial!(1, 0), TestTile);
-        pathfinder.test_node(axial!(0, 0), axial!(-1, 0), 0.5);
-        pathfinder.test_node(axial!(1, 0), axial!(-1, 0), 0.5);
-        let unchanged_node = pathfinder.get(&axial!(0, 0)).unwrap();
-        assert_eq!(None, unchanged_node.prev_node);
-        assert_eq!(0.0, unchanged_node.total_cost);
-        let changed_node = pathfinder.get(&axial!(1, 0)).unwrap();
-        assert_eq!(Some(axial!(-1, 0)), changed_node.prev_node);
-        assert_eq!(0.5, changed_node.total_cost);
+        let mut pathmap = PathMap::default();
+        let source_coords = axial!(1, 0);
+        let dest_coords = axial!(0, 1);
+        pathmap.add_node(dest_coords, PathNode{ total_cost: 2.0, prev_coords: Some(axial!(0, 0)) });
+
+        // expect the map to be unchanged, as the cost of this move was greater than the existing one
+        pathmap.eval_move(source_coords, dest_coords, 3.0);
+        let node = pathmap.get_node(dest_coords).unwrap();
+        assert_eq!(2.0, node.total_cost);
+        assert_eq!(Some(axial!(0, 0)), node.prev_coords);
+
+        // expect the map to be changed, as the cost of this move was less than than the existing one
+        pathmap.eval_move(source_coords, dest_coords, 1.0);
+        let node = pathmap.get_node(dest_coords).unwrap();
+        assert_eq!(1.0, node.total_cost);
+        assert_eq!(Some(source_coords), node.prev_coords);
+
+        // expect that a new node is added if there isn't already one
+        let new_coords = axial!(-1, 0);
+        assert!(pathmap.get_node(new_coords).is_none());
+        pathmap.eval_move(source_coords, new_coords, 2.0);
+        let node = pathmap.get_node(new_coords).unwrap();
+        assert_eq!(2.0, node.total_cost);
+        assert_eq!(Some(source_coords), node.prev_coords);
+    }
+
+    #[test]
+    fn eval_coords()
+    {
+        let mut pathmap = PathMap::default();
+        let mut map = HexMap::new();
+        pathmap.insert_node(axial!(0, 0), PathNode{total_cost: 0.0, prev_coords: None});
+        map.insert(axial!(0, 0), ());
+        pathmap.insert_node(axial!(1, 0), PathNode{ total_cost: 0.5, prev_coords: None });
+        map.insert(axial!(1, 0), ());
+        pathmap.insert_node(axial!(0, 1), PathNode{ total_cost: 3.0, prev_coords: Some(axial!(0, 0)) });
+        map.insert(axial!(0, 1), ());
+
+        pathmap.eval_coords(axial!(0, 0), &map, |_,_,_|{ 2.0 });
+        assert_eq!(
+            Some(&PathNode{ total_cost: 0.5, prev_coords: None }),
+            pathmap.get_node(axial!(1, 0)),
+        );
+        assert_eq!(
+            Some(&PathNode{ total_cost: 2.0, prev_coords: Some(axial!(0, 0)) }),
+            pathmap.get_node(axial!(0, 1)),
+        );
+
+        pathmap.eval_coords(axial!(1, 0), &map, |_,_,_|{ 1.0 });
+        assert_eq!(
+            Some(&PathNode{ total_cost: 0.0, prev_coords: None }),
+            pathmap.get_node(axial!(0, 0)),
+        );
+        assert_eq!(
+            Some(&PathNode{ total_cost: 1.5, prev_coords: Some(axial!(1, 0)) }),
+            pathmap.get_node(axial!(0, 1)),
+        );
+    }
+
+    #[test]
+    fn get_next_node()
+    {
+        let mut map = PathMap::default();
+        assert_eq!(None, map.get_next_node());
+
+        let searched_coords = axial!(1, -1);
+        let searched_node = PathNode{ total_cost: 2.0, prev_coords: Some(axial!(0, 0)) };
+        let unsearched_coords_cheap = axial!(2, -2);
+        let unsearched_node_cheap = PathNode{ total_cost: 3.0, prev_coords: Some(searched_coords) };
+        let unsearched_coords_expensive = axial!(3, -2);
+        let unsearched_node_expensive = PathNode{ total_cost: 4.0, prev_coords: Some(searched_coords) };
+
+        map.insert_node(searched_coords, searched_node);
+        map.set_coords_searched(searched_coords);
+        map.insert_node(unsearched_coords_cheap, unsearched_node_cheap);
+        map.insert_node(unsearched_coords_expensive, unsearched_node_expensive);
+
+        assert_eq!(Some(unsearched_coords_cheap), map.get_next_node());
+        map.set_coords_searched(unsearched_coords_cheap);
+        assert_eq!(Some(unsearched_coords_expensive), map.get_next_node());
+        map.set_coords_searched(unsearched_coords_expensive);
+        assert_eq!(None, map.get_next_node());
+    }
+
+    #[test]
+    fn insert_node()
+    {
+        let coords = axial!(0, 0);
+        let mut map = PathMap::default();
+        assert_eq!(false, map.coords_to_search.contains(&coords));
+        assert_eq!(false, map.searched_coords.contains(&coords));
+        assert_eq!(false, map.nodes.contains_key(&coords));
+
+        // Test adding a node to an empty map
+        let node = PathNode{
+            total_cost: 2.0,
+            prev_coords: None,
+        };
+        map.insert_node(coords, node.clone());
+        assert_eq!(true, map.coords_to_search.contains(&coords), "`map.coords_to_search` set did not contain the added node");
+        assert_eq!(false, map.searched_coords.contains(&coords), "`map.searched_coords` set contains the added node when it should not");
+        assert_eq!(true, map.nodes.contains_key(&coords), "`map.nodes` did not contain the added node");
+        assert_eq!(&node, map.nodes.get(&coords).unwrap(), "Node at coordinates did not match the node added");
+
+        // New node has greater cost than the existing node, so it does NOT replace the existing node
+        let new_node = PathNode{
+            total_cost: 3.0,
+            prev_coords: Some(axial!(1, 0)),
+        };
+        map.insert_node(coords, new_node.clone());
+        assert_eq!(true, map.coords_to_search.contains(&coords));
+        assert_eq!(false, map.searched_coords.contains(&coords), "`map.searched_coords` set contains the added node when it should not");
+        assert_eq!(true, map.nodes.contains_key(&coords));
+        assert_eq!(&node, map.nodes.get(&coords).unwrap(), "Node was updated with new higher cost node when it should not have been");
+
+        // New node has less cost than the existing node, so it DOES replace the existing node
+        let new_node = PathNode{
+            total_cost: 1.0,
+            prev_coords: Some(axial!(1, 0)),
+        };
+        map.insert_node(coords, new_node.clone());
+        assert_eq!(true, map.coords_to_search.contains(&coords));
+        assert_eq!(false, map.searched_coords.contains(&coords), "`map.searched_coords` set contains the added node when it should not");
+        assert_eq!(true, map.nodes.contains_key(&coords));
+        assert_eq!(&new_node, map.nodes.get(&coords).unwrap(), "Existing node was not updated with the new lower cost node");
     }
 }

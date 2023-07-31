@@ -1,5 +1,6 @@
 mod axial; pub use axial::*;
 mod cube; pub use cube::*;
+mod macros; pub use macros::*;
 
 #[cfg(feature="bevy")]
 use bevy::prelude::Vec3;

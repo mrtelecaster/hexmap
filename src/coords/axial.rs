@@ -3,19 +3,6 @@ use crate::{CubeCoords, Orientation, HexCoords, axial};
 
 
 
-/// Shortcut for [`AxialCoords::new`](crate::AxialCoords::new). Creates a new set of
-/// [axial coordinates](crate::AxialCoords) with the provided values.
-/// 
-/// ```
-/// use hexmap::{AxialCoords, axial};
-/// assert_eq!(AxialCoords::new(1, 2), axial!(1, 2));
-/// ```
-#[macro_export]
-macro_rules! axial {
-    ($q:literal, $r:literal) => { AxialCoords::new($q, $r) }
-}
-
-
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 /// Axial coordinate system
 /// 
@@ -166,6 +153,8 @@ impl From<&CubeCoords> for AxialCoords
         Self{ q: value.q, r: value.r }
     }
 }
+
+
 
 
 #[cfg(test)]
