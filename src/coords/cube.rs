@@ -1,8 +1,7 @@
 use std::{ops::{Add, Mul, Neg, Sub}, fmt::Display};
 use lerp::Lerp;
-use crate::{HexCoords, cube, Orientation};
-
-use super::AxialCoords;
+use serde::{Deserialize, Serialize};
+use crate::{AxialCoords, HexCoords, cube, Orientation};
 
 
 /// Cube coordinates
@@ -11,6 +10,7 @@ use super::AxialCoords;
 /// 
 /// <https://www.redblobgames.com/grids/hexagons/#coordinates-cube>
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Deserialize, Serialize)]
 pub struct CubeCoords
 {
     pub q: isize,

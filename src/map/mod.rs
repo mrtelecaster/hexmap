@@ -1,4 +1,5 @@
 use std::{collections::HashMap, hash::Hash};
+use serde::{Deserialize, Serialize};
 use crate::{HexCoords, AxialCoords, CubeCoords};
 
 #[cfg(feature="bevy")]
@@ -11,7 +12,9 @@ pub type CubeMap<T> = HexMap<CubeCoords, T>;
 
 
 #[cfg_attr(feature="bevy", derive(Resource))]
+#[derive(Deserialize, Serialize)]
 pub struct HexMap<C, T>
+where C: Eq + Hash
 {
     map: HashMap<C, T>
 }

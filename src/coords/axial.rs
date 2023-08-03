@@ -1,14 +1,16 @@
 use std::ops::{Add, Sub, Mul};
+use serde::{Deserialize, Serialize};
 use crate::{CubeCoords, Orientation, HexCoords, axial};
 
 
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 /// Axial coordinate system
 /// 
 /// Good for general use. Intuitive for humans, and cheaply converts to/from [`CubeCoords`] which are good for math and other operations
 /// 
 /// <https://www.redblobgames.com/grids/hexagons/#coordinates-axial>
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Deserialize, Serialize)]
 pub struct AxialCoords
 {
     pub q: isize,

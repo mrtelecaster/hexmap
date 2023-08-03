@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 lerp = { version="*" }
+serde = { version="*", features=["derive"] }
 bevy = { version="0.11", optional=true }
 
 [dev-dependencies]
