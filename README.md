@@ -4,5 +4,5 @@ Rust library for handling hexagon map logic and math for games. Intended for use
 
 ## Support the Project
 
-![Static Badge](https://img.shields.io/badge/Patreon-NandoGamedev-FF424D?logo=patreon&link=https%3A%2F%2Fpatreon.com%2FNandoGamedev)
-![Static Badge](https://img.shields.io/badge/Ko--Fi-nando__gamedev-FF5E5B?logo=ko-fi&link=https%3A%2F%2Fko-fi.com%2Fnando_gamedev)
+[![Static Badge](https://img.shields.io/badge/Patreon-NandoGamedev-FF424D?logo=patreon)](https://www.patreon.com/NandoGamedev)
+[![Static Badge](https://img.shields.io/badge/Ko--Fi-nando__gamedev-FF5E5B?logo=ko-fi)](https://ko-fi.com/nando_gamedev)
