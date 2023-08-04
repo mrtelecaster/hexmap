@@ -1,10 +1,7 @@
-//! Hexagon tile math and logic library for game development.
+//! Hexagon tile math and logic library for game development. Based on
+//! [the article *Hexagonal Grids* by Red Blob Games](https://www.redblobgames.com/grids/hexagons/).
 //! 
-//! I wouldn't recommend using this library as anything other than an
-//! educational example. I'm using it as a test bed for a more robust and useful
-//! tile mapping library that's actually intended for use as a published crate.
-//! 
-//! Based on [the article *Hexagonal Grids* by Red Blob Games](https://www.redblobgames.com/grids/hexagons/).
+//! ## Support the Project
 
 
 mod coords; pub use coords::*;
