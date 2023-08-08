@@ -5,7 +5,7 @@ mod macros; pub use macros::*;
 #[cfg(feature="bevy")]
 use bevy::prelude::Vec3;
 
-use crate::{Orientation, constants::{FLAT_TOP_CORNERS, POINTY_TOP_CORNERS}};
+use crate::Orientation;
 
 
 /// Trait for a type that can represent a coordinate on a hexagonal grid.
