@@ -17,10 +17,5 @@ lerp = { version="*" }
 serde = { version="*", features=["derive"] }
 bevy = { version="0.11", optional=true }
 
-[dev-dependencies]
-rand = "*"
-rand_distr = "*"
-svg = "*"
-
 [features]
 bevy = ["dep:bevy"]
