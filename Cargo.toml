@@ -1,5 +1,5 @@
 [package]
-name = "hexmap"
+name = "hextile"
 version = "0.1.1"
 edition = "2021"
 authors = ["Fernando A. Fraticelli <53105809+mrtelecaster@users.noreply.github.com>"]
