@@ -2,6 +2,13 @@
 name = "hexmap"
 version = "0.1.1"
 edition = "2021"
+authors = ["Fernando A. Fraticelli <53105809+mrtelecaster@users.noreply.github.com>"]
+description = "Handles coordinate math and other logic for hexagonal game maps"
+repository = "https://github.com/mrtelecaster/hexmap"
+license = "GPL-3.0-only"
+keywords = ["gamedev", "hexagon"]
+categories = ["data-structures", "game-development"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
