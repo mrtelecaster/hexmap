@@ -1,6 +1,6 @@
 [package]
-name = "hexmap"
-version = "0.1.1"
+name = "hextile"
+version = "0.1.2"
 edition = "2021"
 authors = ["Fernando A. Fraticelli <53105809+mrtelecaster@users.noreply.github.com>"]
 description = "Handles coordinate math and other logic for hexagonal game maps"
@@ -13,8 +13,8 @@ categories = ["data-structures", "game-development"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-lerp = { version="*" }
-serde = { version="*", features=["derive"] }
+lerp = { version="0.5" }
+serde = { version="1", features=["derive"] }
 bevy = { version="0.11", optional=true }
 
 [features]
