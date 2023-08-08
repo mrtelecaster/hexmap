@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Fernando A. Fraticelli <53105809+mrtelecaster@users.noreply.github.com>"]
 description = "Handles coordinate math and other logic for hexagonal game maps"
 repository = "https://github.com/mrtelecaster/hexmap"
-license = "GPL-3.0-only"
+license = "GPL-3.0-or-later"
 keywords = ["gamedev", "hexagon"]
 categories = ["data-structures", "game-development"]
 
