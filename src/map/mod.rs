@@ -11,6 +11,10 @@ pub type AxialMap<T> = HexMap<AxialCoords, T>;
 pub type CubeMap<T> = HexMap<CubeCoords, T>;
 
 
+/// A map of hexagonal tiles
+/// 
+/// `C` should be a hexagonal coordinate type and represents the "key" of the map. `T` can be any
+/// type supplied by the user, and is the type of the tiles stored in the map, indexed by coordinates `C`
 #[cfg_attr(feature="bevy", derive(Resource))]
 #[derive(Deserialize, Serialize)]
 pub struct HexMap<C, T>
@@ -22,26 +26,37 @@ where C: Eq + Hash
 impl<C, T> HexMap<C, T>
 where C: Copy + Eq + PartialEq + Hash + HexCoords
 {
+	/// Creates a new, empty map
     pub fn new() -> Self
     {
         Self{ map: HashMap::new() }
     }
 
+	/// Gets the tile at the given coordinates, if there is one.
+	/// 
+	/// If there is no tile at the given coordinates, [`None`] is returned.
     pub fn get(&self, coords: C) -> Option<&T>
     {
         self.map.get(&coords)
     }
 
+	/// Gets the tile from the given coordinates mutably, allowing the retrieved tile to be modified
+	/// with the changes saved in the map.
+	/// 
+	/// If no tile exists at the given coordinates, [`None`] is returned.
     pub fn get_mut(&mut self, coords: C) -> Option<&mut T>
     {
         self.map.get_mut(&coords)
     }
 
+	/// Inserts a tile at the given coordinates
     pub fn insert(&mut self, coords: C, tile: T)
     {
         self.map.insert(coords, tile);
     }
 
+	/// Inserts a hexagonal area of tiles into the map with the given radius, centered around the
+	/// given tile coords.
     pub fn insert_area(&mut self, center: C, radius: usize, tile: T)
     where C: HexCoords, T: Clone
     {
@@ -52,7 +67,8 @@ where C: Copy + Eq + PartialEq + Hash + HexCoords
         }
     }
 
-    
+    /// Finds a path from the `start` coords to the `destination` coords on this map, using
+	/// Djikstra's algorithm with the provided cost function
     pub fn find_path<F>(&self, start: C, destination: C, cost_fn: F) -> Option<Vec<C>>
     where C: Copy + PartialEq, F: Fn(C, C, &HexMap<C, T>) -> f32
     {
@@ -68,6 +84,7 @@ where C: Copy + Eq + PartialEq + Hash + HexCoords
         None
     }
 
+	/// Returns an iterator of all the Coord/Tile (Key/Value) pairs in this map
     pub fn iter(&self) -> std::collections::hash_map::Iter<C, T>
     {
         self.map.iter()

@@ -38,8 +38,10 @@ where Self: Clone + Copy + Sized
     /// list is not defined.
     fn adjacent(center: Self) -> Vec<Self>;
 
+	/// Gets the position of the center of this tile on the X/Y plane
     fn to_world(&self, orientation: Orientation) -> (f32, f32);
 
+	/// Gets the tile coordinates closest to the given position on the X/Y plane
     fn from_world(x: f32, y: f32, orientation: Orientation) -> Self;
 
     /// Generates a filled hexagonal area centered on the given `center` coordinates.
@@ -62,14 +64,7 @@ where Self: Clone + Copy + Sized
     fn corners(&self, orientation: Orientation) -> [(f32, f32);6]
     {
         let (center_x, center_y) = self.to_world(orientation);
-        let corners = match orientation {
-            Orientation::FlatTop => {
-                FLAT_TOP_CORNERS
-            },
-            Orientation::PointyTop => {
-                POINTY_TOP_CORNERS
-            },
-        };
+        let corners = orientation.tile_corners();
         let output_corners = [
             (center_x + corners[0].0, center_y + corners[0].1),
             (center_x + corners[1].0, center_y + corners[1].1),
@@ -81,11 +76,13 @@ where Self: Clone + Copy + Sized
         output_corners
     }
 
+	/// Gets the tile nearest to the given position in Bevy Engine space
     #[cfg(feature="bevy")]
     fn from_vec3(vec: Vec3, orientation: Orientation) -> Self {
         Self::from_world(vec.x, vec.z, orientation)
     }
 
+	/// Gets the center position of this tile as a Bevy Engine [`Vec3`]
     #[cfg(feature="bevy")]
     fn to_vec3(&self, orientation: Orientation) -> Vec3 {
         let (x, z) = self.to_world(orientation);
