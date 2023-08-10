@@ -15,6 +15,12 @@
 //! the crate isn't too complicated at the moment that it could cause major architectural problems
 //! in a game that uses it.
 //! 
+//! ## Special Thanks
+//! 
+//! This project would not be possible without the support of my lovely donors:
+//! 
+//! - Tim "Frist" Kania
+//! 
 //! ## Copyright/License
 //! 
 //! Copyright 2023 Fernando A. Fraticelli

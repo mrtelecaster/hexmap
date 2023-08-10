@@ -7,6 +7,12 @@ Rust library for handling hexagon map logic and math for games. Intended for use
 
 This library is not intended for long term use on its own - it is a test bed for concepts for a more advanced tilemapping library, as well as a foundation for me to start working on my own hexagon based games before this more advanced library is ready for use. If you can't wait to start using my code to include tilemapping in your own game, migration from this crate to the new one when it eventually becomes available should be easy, as its design is based on and informed by this crate, as well as being designed with migrating my own game over in mind. Plus, the crate isn't too complicated at the moment that it could cause major architectural problems in a game that uses it.
 
+## Special Thanks
+
+This and all of my other projects would not be possible without the support of my lovely donors:
+
+- Tim "Frist" Kania
+
 ## Copyright/License
 
 Copyright 2023 Fernando A. Fraticelli
